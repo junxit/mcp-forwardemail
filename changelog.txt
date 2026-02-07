@@ -1,0 +1,21 @@
+[2026-01-29] - Version 0.1.0
+- Added: Full Google-style docstrings to all client methods (Args/Returns/Raises)
+- Added: Module-level docstrings with typical usage examples and Attributes
+- Added: Initial MCP server implementation with 31 tools
+- Added: Async HTTP client for ForwardEmail API
+- Added: Account tools (get, create, update)
+- Added: Domain tools (list, create, get, update, delete, verify_records, verify_smtp, catchall_passwords)
+- Added: Alias tools (list, create, get, update, delete, generate_password)
+- Added: Email tools (limit_get, list, create, get, delete)
+- Added: Invite tools (accept, create, delete)
+- Added: Member tools (update, delete)
+- Added: Log tools (download)
+- Added: Encrypt tools (txt_record)
+- Added: README.md with installation and configuration instructions
+- Added: CLAUDE.md workspace configuration referencing ~/.claude/CLAUDE.md
+- Added: Basic usage example
+- Added: changelog.txt following global CLAUDE.md standards
+- Added: .env.example with API key placeholder
+- Added: tests/ directory with unit tests
+- Added: How to Test, How to Uninstall, Assumptions sections to README.md
+- Synced: forwardemail/forwardemail.net @ 79cd150b812c2aa5b2997462d2628821b9a785c4
