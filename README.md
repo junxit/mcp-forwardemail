@@ -28,13 +28,13 @@ An MCP (Model Context Protocol) server that provides comprehensive access to the
 ### Using uvx (Recommended)
 
 ```bash
-uvx forwardemail-mcp
+uvx --from git+https://github.com/junxit/mcp-forwardemail.git forwardemail-mcp
 ```
 
 ### Using pip
 
 ```bash
-pip install forwardemail-mcp
+pip install git+https://github.com/junxit/mcp-forwardemail.git
 ```
 
 ### From Source
@@ -56,7 +56,7 @@ Add to your `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "forwardemail": {
       "command": "uvx",
-      "args": ["forwardemail-mcp"],
+      "args": ["--from", "git+https://github.com/junxit/mcp-forwardemail.git", "forwardemail-mcp"],
       "env": {
         "FORWARDEMAIL_API_KEY": "your_api_key_here"
       }
@@ -89,7 +89,7 @@ Add to your MCP settings:
 {
   "forwardemail": {
     "command": "uvx",
-    "args": ["forwardemail-mcp"],
+    "args": ["--from", "git+https://github.com/junxit/mcp-forwardemail.git", "forwardemail-mcp"],
     "env": {
       "FORWARDEMAIL_API_KEY": "your_api_key_here"
     }
@@ -249,7 +249,7 @@ uv run pytest tests/test_client.py -v
 
 ```bash
 # If installed via pip/uv
-uv pip uninstall forwardemail-mcp
+pip uninstall forwardemail-mcp
 
 # Remove from Claude Desktop config
 # Edit ~/Library/Application Support/Claude/claude_desktop_config.json

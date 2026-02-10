@@ -1,3 +1,8 @@
+[2026-02-09] - Version 0.1.1
+- Changed: README installation and MCP config examples to use GitHub source instead of PyPi
+  - Updated uvx, pip install, Claude Desktop, and Cline/Continue configs to use git+https://github.com/junxit/mcp-forwardemail.git
+  - Updated uninstall command from `uv pip uninstall` to `pip uninstall`
+
 [2026-01-29] - Version 0.1.0
 - Added: Full Google-style docstrings to all client methods (Args/Returns/Raises)
 - Added: Module-level docstrings with typical usage examples and Attributes
