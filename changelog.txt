@@ -1,3 +1,29 @@
+[2026-06-19] - Version 0.2.0
+- Fixed: invite_accept was broken by an upstream route change; it now requires a
+  `token` argument and calls GET /v1/domains/{domain}/invites/{token}
+- Added: Domain sender filtering - domain_allowlist_update, domain_denylist_update
+- Added: domain_test_s3_connection to validate custom S3 storage credentials
+- Added: Domain-scoped Sieve filters (API key auth) - domain_sieve_list/create/get/
+  update/delete/activate
+- Added: Alias-credential (CardDAV/CalDAV/IMAP) tool groups, authenticated with an
+  alias username + generated password rather than the account API key:
+  - Contacts: contacts_list, contact_create/get/update/delete
+  - Calendars: calendars_list, calendar_create/get/update/delete
+  - Calendar events: calendar_events_list, calendar_event_create/get/update/delete
+  - Messages: messages_list, message_create/get/update/delete
+  - Folders: folders_list, folder_create/get/update/delete
+  - Sieve scripts: sieve_scripts_list, sieve_script_create/get/update/delete/activate
+- Added: Per-request Basic-auth override in the client for alias-credential endpoints
+- Changed: Tool count grew from 31 to 71
+- Changed: Removed the global Content-Type request header so httpx sets it per
+  request (form for data, application/json for JSON bodies) - required for the new
+  JSON endpoints; existing form endpoints are unchanged
+- Changed: Bumped version to 0.2.0 (pyproject.toml and __init__.py had lagged at
+  0.1.0 behind the 0.1.1 changelog entry; now realigned)
+- Added: tests/test_endpoints.py covering the invite fix, alias-vs-API-key auth,
+  the content-type fix, and tool/handler wiring
+- Synced: forwardemail/forwardemail.net @ 9f029b09112060ba7ec7e7bc510ac12948996d56
+
 [2026-02-09] - Version 0.1.1
 - Changed: README installation and MCP config examples to use GitHub source instead of PyPi
   - Updated uvx, pip install, Claude Desktop, and Cline/Continue configs to use git+https://github.com/junxit/mcp-forwardemail.git

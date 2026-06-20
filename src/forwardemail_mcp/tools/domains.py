@@ -230,6 +230,64 @@ TOOLS = [
             "required": ["domain", "token_id"],
         },
     ),
+    Tool(
+        name="domain_allowlist_update",
+        description="Replace a domain's sender allowlist. Pass an empty list to clear it.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string",
+                    "description": "Domain name or ID",
+                },
+                "allowlist": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Allowlisted senders: IP addresses, FQDNs, email addresses, "
+                        "or wildcard TLDs such as '*.com'. Empty list clears the allowlist."
+                    ),
+                },
+            },
+            "required": ["domain", "allowlist"],
+        },
+    ),
+    Tool(
+        name="domain_denylist_update",
+        description="Replace a domain's sender denylist. Pass an empty list to clear it.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string",
+                    "description": "Domain name or ID",
+                },
+                "denylist": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Denylisted senders: IP addresses, FQDNs, email addresses, "
+                        "or wildcard TLDs such as '*.com'. Empty list clears the denylist."
+                    ),
+                },
+            },
+            "required": ["domain", "denylist"],
+        },
+    ),
+    Tool(
+        name="domain_test_s3_connection",
+        description="Test the domain's custom S3 storage connection (credentials and bucket access).",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "type": "string",
+                    "description": "Domain name or ID",
+                },
+            },
+            "required": ["domain"],
+        },
+    ),
 ]
 
 
@@ -326,6 +384,30 @@ async def handle_domain_catchall_password_delete(client: ForwardEmailClient, arg
     return json.dumps(result, indent=2)
 
 
+async def handle_domain_allowlist_update(client: ForwardEmailClient, args: dict[str, Any]) -> str:
+    """Handle domain_allowlist_update tool."""
+    result = await client.update_allowlist(
+        domain=args["domain"],
+        allowlist=args["allowlist"],
+    )
+    return json.dumps(result, indent=2)
+
+
+async def handle_domain_denylist_update(client: ForwardEmailClient, args: dict[str, Any]) -> str:
+    """Handle domain_denylist_update tool."""
+    result = await client.update_denylist(
+        domain=args["domain"],
+        denylist=args["denylist"],
+    )
+    return json.dumps(result, indent=2)
+
+
+async def handle_domain_test_s3_connection(client: ForwardEmailClient, args: dict[str, Any]) -> str:
+    """Handle domain_test_s3_connection tool."""
+    result = await client.test_s3_connection(args["domain"])
+    return json.dumps(result, indent=2)
+
+
 HANDLERS = {
     "domains_list": handle_domains_list,
     "domain_create": handle_domain_create,
@@ -337,4 +419,7 @@ HANDLERS = {
     "domain_catchall_passwords_list": handle_domain_catchall_passwords_list,
     "domain_catchall_password_create": handle_domain_catchall_password_create,
     "domain_catchall_password_delete": handle_domain_catchall_password_delete,
+    "domain_allowlist_update": handle_domain_allowlist_update,
+    "domain_denylist_update": handle_domain_denylist_update,
+    "domain_test_s3_connection": handle_domain_test_s3_connection,
 }

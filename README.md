@@ -6,10 +6,12 @@ An MCP (Model Context Protocol) server that provides comprehensive access to the
 
 ## Features
 
-- **31 MCP tools** covering the ForwardEmail API
-- **Domain Management** - List, create, update, delete domains; verify DNS/SMTP records
+- **71 MCP tools** covering the ForwardEmail API
+- **Domain Management** - List, create, update, delete domains; verify DNS/SMTP records; allowlist/denylist; S3 connection test
 - **Alias Management** - Full CRUD for email aliases with forwarding rules
 - **Outbound Email** - Send emails via API, check limits, manage queue
+- **Sieve Filtering** - Manage server-side Sieve filtering scripts
+- **Mailbox (alias credentials)** - Contacts (CardDAV), Calendars & events (CalDAV), Messages & Folders (IMAP)
 - **Team Collaboration** - Invite members, manage roles
 - **Security** - Password generation for IMAP/SMTP access, TXT record encryption
 - **Async/Await** - Built with modern Python async patterns
@@ -105,6 +107,21 @@ Alternatively, set the API key as an environment variable:
 export FORWARDEMAIL_API_KEY="your_api_key_here"
 ```
 
+### Alias Credentials (for mailbox tools)
+
+Most tools authenticate with your account API key. The mailbox tools — **Contacts**,
+**Calendars**, **Calendar Events**, **Messages**, **Folders**, and **Sieve Scripts**
+(the alias-auth variant) — instead use a specific alias's own credentials, so each of
+those tools takes two extra arguments:
+
+- `alias_username` — the full alias email (e.g. `me@example.com`)
+- `alias_password` — a password generated for that alias via `alias_generate_password`
+
+These are passed per tool call (no extra environment variables), so you can work with
+any alias across any domain in the same session. Generate a password first:
+
+> *"Generate an IMAP/CardDAV password for the alias `me@example.com`, then list its folders."*
+
 ## Available Tools
 
 ### Account (3 tools)
@@ -114,7 +131,7 @@ export FORWARDEMAIL_API_KEY="your_api_key_here"
 | `account_create` | Create a new account |
 | `account_update` | Update account details |
 
-### Domains (10 tools)
+### Domains (13 tools)
 | Tool | Description |
 |------|-------------|
 | `domains_list` | List all domains |
@@ -127,6 +144,9 @@ export FORWARDEMAIL_API_KEY="your_api_key_here"
 | `domain_catchall_passwords_list` | List catch-all passwords |
 | `domain_catchall_password_create` | Create catch-all password |
 | `domain_catchall_password_delete` | Delete catch-all password |
+| `domain_allowlist_update` | Replace the domain sender allowlist |
+| `domain_denylist_update` | Replace the domain sender denylist |
+| `domain_test_s3_connection` | Test custom S3 storage connection |
 
 ### Aliases (6 tools)
 | Tool | Description |
@@ -150,7 +170,7 @@ export FORWARDEMAIL_API_KEY="your_api_key_here"
 ### Invites (3 tools)
 | Tool | Description |
 |------|-------------|
-| `invite_accept` | Accept a domain invite |
+| `invite_accept` | Accept a domain invite (requires the invite `token`) |
 | `invite_create` | Invite a user to domain |
 | `invite_delete` | Remove an invite |
 
@@ -170,6 +190,73 @@ export FORWARDEMAIL_API_KEY="your_api_key_here"
 |------|-------------|
 | `encrypt_txt_record` | Encrypt TXT record value |
 
+### Sieve Filters — domain (6 tools, API key)
+| Tool | Description |
+|------|-------------|
+| `domain_sieve_list` | List an alias's Sieve scripts |
+| `domain_sieve_create` | Create a Sieve script |
+| `domain_sieve_get` | Get a Sieve script |
+| `domain_sieve_update` | Update a Sieve script |
+| `domain_sieve_delete` | Delete a Sieve script |
+| `domain_sieve_activate` | Activate a Sieve script |
+
+The tool groups below use **alias credentials** (`alias_username` + `alias_password`) — see [Alias Credentials](#alias-credentials-for-mailbox-tools).
+
+### Contacts — CardDAV (5 tools)
+| Tool | Description |
+|------|-------------|
+| `contacts_list` | List contacts |
+| `contact_create` | Create a contact |
+| `contact_get` | Get a contact |
+| `contact_update` | Update a contact |
+| `contact_delete` | Delete a contact |
+
+### Calendars — CalDAV (5 tools)
+| Tool | Description |
+|------|-------------|
+| `calendars_list` | List calendars |
+| `calendar_create` | Create a calendar |
+| `calendar_get` | Get a calendar |
+| `calendar_update` | Update a calendar |
+| `calendar_delete` | Delete a calendar |
+
+### Calendar Events — CalDAV (5 tools)
+| Tool | Description |
+|------|-------------|
+| `calendar_events_list` | List calendar events |
+| `calendar_event_create` | Create an event (iCalendar) |
+| `calendar_event_get` | Get an event |
+| `calendar_event_update` | Update an event |
+| `calendar_event_delete` | Delete an event |
+
+### Messages — IMAP (5 tools)
+| Tool | Description |
+|------|-------------|
+| `messages_list` | List and search messages |
+| `message_create` | Create/append a message |
+| `message_get` | Get a message |
+| `message_update` | Update flags/labels/folder |
+| `message_delete` | Delete a message |
+
+### Folders — IMAP (5 tools)
+| Tool | Description |
+|------|-------------|
+| `folders_list` | List folders |
+| `folder_create` | Create a folder |
+| `folder_get` | Get a folder |
+| `folder_update` | Rename a folder |
+| `folder_delete` | Delete a folder |
+
+### Sieve Scripts — alias auth (6 tools)
+| Tool | Description |
+|------|-------------|
+| `sieve_scripts_list` | List Sieve scripts |
+| `sieve_script_create` | Create a Sieve script |
+| `sieve_script_get` | Get a Sieve script |
+| `sieve_script_update` | Update a Sieve script |
+| `sieve_script_delete` | Delete a Sieve script |
+| `sieve_script_activate` | Activate a Sieve script |
+
 ## Usage Examples
 
 ### List Your Domains
@@ -188,14 +275,18 @@ Ask Claude: *"Send an email from hello@example.com to user@gmail.com with subjec
 
 Ask Claude: *"Verify the DNS records for example.com"*
 
-## API Limitations
+## API Coverage Notes
 
-The following ForwardEmail API endpoints require **alias credentials** (email + generated password) instead of API token authentication and are **not supported** in this MCP server:
+The ForwardEmail Contacts (CardDAV), Calendars/Events (CalDAV), Messages and Folders
+(IMAP), and alias Sieve scripts authenticate with **alias credentials** (alias email +
+generated password) rather than the account API key. These are now **fully supported** —
+see [Alias Credentials](#alias-credentials-for-mailbox-tools) for how to supply them.
 
-- Alias Contacts (CardDAV)
-- Alias Calendars (CalDAV)
-- Alias Messages (IMAP/POP3)
-- Alias Folders (IMAP/POP3)
+Not currently wrapped:
+
+- **Push tokens** (`/v1/push-tokens`) — registering a device push token requires a real
+  device/browser to mint the token value, so it is out of scope for this server.
+- Internal/billing endpoints (Stripe, PayPal, WebSocket, etc.).
 
 ## Troubleshooting
 
@@ -225,24 +316,21 @@ cd mcp-forwardemail
 # Install in development mode
 uv pip install -e ".[dev]"
 
-# Run tests
-uv run pytest tests/ -v
+# Run tests (--extra dev pulls pytest/respx)
+uv run --extra dev pytest -v
 
 # Run the server locally
-FORWARDEMAIL_API_KEY="your_key" uv run python -m forwardemail_mcp
+FORWARDEMAIL_API_KEY="your_key" uv run forwardemail-mcp
 ```
 
 ## How to Test
 
 ```bash
 # Run unit tests
-uv run pytest tests/ -v
-
-# Run with coverage
-uv run pytest tests/ --cov=forwardemail_mcp
+uv run --extra dev pytest -v
 
 # Run single test file
-uv run pytest tests/test_client.py -v
+uv run --extra dev pytest tests/test_endpoints.py -v
 ```
 
 ## How to Uninstall

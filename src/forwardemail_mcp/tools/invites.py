@@ -18,8 +18,12 @@ TOOLS = [
                     "type": "string",
                     "description": "Domain name to accept invite for",
                 },
+                "token": {
+                    "type": "string",
+                    "description": "Invite token from the invitation email/link",
+                },
             },
-            "required": ["domain"],
+            "required": ["domain", "token"],
         },
     ),
     Tool(
@@ -69,7 +73,7 @@ TOOLS = [
 
 async def handle_invite_accept(client: ForwardEmailClient, args: dict[str, Any]) -> str:
     """Handle invite_accept tool."""
-    result = await client.accept_invite(args["domain"])
+    result = await client.accept_invite(args["domain"], args["token"])
     return json.dumps(result, indent=2)
 
 

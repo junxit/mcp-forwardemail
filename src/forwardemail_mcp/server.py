@@ -28,7 +28,23 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 from .client import ForwardEmailClient
-from .tools import account, domains, aliases, emails, invites, members, logs, encrypt
+from .tools import (
+    account,
+    domains,
+    aliases,
+    emails,
+    invites,
+    members,
+    logs,
+    encrypt,
+    sieve,
+    contacts,
+    calendars,
+    calendar_events,
+    messages,
+    folders,
+    sieve_scripts,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -66,6 +82,13 @@ ALL_TOOLS = [
     *members.TOOLS,
     *logs.TOOLS,
     *encrypt.TOOLS,
+    *sieve.TOOLS,
+    *contacts.TOOLS,
+    *calendars.TOOLS,
+    *calendar_events.TOOLS,
+    *messages.TOOLS,
+    *folders.TOOLS,
+    *sieve_scripts.TOOLS,
 ]
 
 # Collect all handlers
@@ -78,6 +101,13 @@ TOOL_HANDLERS = {
     **members.HANDLERS,
     **logs.HANDLERS,
     **encrypt.HANDLERS,
+    **sieve.HANDLERS,
+    **contacts.HANDLERS,
+    **calendars.HANDLERS,
+    **calendar_events.HANDLERS,
+    **messages.HANDLERS,
+    **folders.HANDLERS,
+    **sieve_scripts.HANDLERS,
 }
 
 
