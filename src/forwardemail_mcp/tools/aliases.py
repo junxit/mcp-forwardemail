@@ -83,6 +83,14 @@ TOOLS = [
                     "type": "string",
                     "description": "PGP public key for encryption",
                 },
+                "has_recipient_verification": {
+                    "type": "boolean",
+                    "description": "Require recipients to confirm before forwarding",
+                },
+                "max_quota": {
+                    "type": "string",
+                    "description": "Maximum storage quota for this alias (e.g. '1 GB')",
+                },
             },
             "required": ["domain", "name"],
         },
@@ -152,6 +160,14 @@ TOOLS = [
                 "public_key": {
                     "type": "string",
                     "description": "PGP public key",
+                },
+                "has_recipient_verification": {
+                    "type": "boolean",
+                    "description": "Require recipients to confirm before forwarding",
+                },
+                "max_quota": {
+                    "type": "string",
+                    "description": "Maximum storage quota for this alias (e.g. '1 GB')",
                 },
             },
             "required": ["domain", "alias_id"],
@@ -231,10 +247,12 @@ async def handle_alias_create(client: ForwardEmailClient, args: dict[str, Any]) 
         recipients=args.get("recipients"),
         description=args.get("description"),
         labels=args.get("labels"),
+        has_recipient_verification=args.get("has_recipient_verification"),
         is_enabled=args.get("is_enabled"),
         has_imap=args.get("has_imap"),
         has_pgp=args.get("has_pgp"),
         public_key=args.get("public_key"),
+        max_quota=args.get("max_quota"),
     )
     return json.dumps(result, indent=2)
 
@@ -257,10 +275,12 @@ async def handle_alias_update(client: ForwardEmailClient, args: dict[str, Any]) 
         recipients=args.get("recipients"),
         description=args.get("description"),
         labels=args.get("labels"),
+        has_recipient_verification=args.get("has_recipient_verification"),
         is_enabled=args.get("is_enabled"),
         has_imap=args.get("has_imap"),
         has_pgp=args.get("has_pgp"),
         public_key=args.get("public_key"),
+        max_quota=args.get("max_quota"),
     )
     return json.dumps(result, indent=2)
 

@@ -70,6 +70,22 @@ TOOLS = [
                     "type": "boolean",
                     "description": "Enable virus scanning",
                 },
+                "has_recipient_verification": {
+                    "type": "boolean",
+                    "description": "Enable recipient verification",
+                },
+                "retention_days": {
+                    "type": "integer",
+                    "description": "Log retention days (0-30)",
+                },
+                "bounce_webhook": {
+                    "type": "string",
+                    "description": "Webhook URL for bounce notifications",
+                },
+                "max_quota_per_alias": {
+                    "type": "string",
+                    "description": "Maximum storage quota per alias (e.g. '1 GB')",
+                },
             },
             "required": ["domain"],
         },
@@ -129,6 +145,10 @@ TOOLS = [
                 "bounce_webhook": {
                     "type": "string",
                     "description": "Webhook URL for bounce notifications",
+                },
+                "max_quota_per_alias": {
+                    "type": "string",
+                    "description": "Maximum storage quota per alias (e.g. '1 GB')",
                 },
             },
             "required": ["domain"],
@@ -315,6 +335,10 @@ async def handle_domain_create(client: ForwardEmailClient, args: dict[str, Any])
         has_phishing_protection=args.get("has_phishing_protection"),
         has_executable_protection=args.get("has_executable_protection"),
         has_virus_protection=args.get("has_virus_protection"),
+        has_recipient_verification=args.get("has_recipient_verification"),
+        retention_days=args.get("retention_days"),
+        bounce_webhook=args.get("bounce_webhook"),
+        max_quota_per_alias=args.get("max_quota_per_alias"),
     )
     return json.dumps(result, indent=2)
 
@@ -337,6 +361,7 @@ async def handle_domain_update(client: ForwardEmailClient, args: dict[str, Any])
         has_recipient_verification=args.get("has_recipient_verification"),
         retention_days=args.get("retention_days"),
         bounce_webhook=args.get("bounce_webhook"),
+        max_quota_per_alias=args.get("max_quota_per_alias"),
     )
     return json.dumps(result, indent=2)
 

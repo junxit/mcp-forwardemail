@@ -22,6 +22,11 @@
   0.1.0 behind the 0.1.1 changelog entry; now realigned)
 - Added: tests/test_endpoints.py covering the invite fix, alias-vs-API-key auth,
   the content-type fix, and tool/handler wiring
+- Fixed: Exposed request parameters the client already supported but the tool
+  schemas/handlers omitted - domain_create now accepts has_recipient_verification,
+  retention_days, bounce_webhook, max_quota_per_alias; domain_update accepts
+  max_quota_per_alias; alias_create/update accept has_recipient_verification and
+  max_quota
 - Synced: forwardemail/forwardemail.net @ 9f029b09112060ba7ec7e7bc510ac12948996d56
 
 [2026-02-09] - Version 0.1.1

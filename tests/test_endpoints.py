@@ -10,13 +10,14 @@ behaviors introduced by the upstream sync:
 
 import base64
 import json
+from urllib.parse import parse_qs
 
 import httpx
 import respx
 
 from forwardemail_mcp.client import ForwardEmailClient
 from forwardemail_mcp.server import ALL_TOOLS, TOOL_HANDLERS
-from forwardemail_mcp.tools import contacts, domains, folders
+from forwardemail_mcp.tools import aliases, contacts, domains, folders
 
 BASE = "https://api.forwardemail.net"
 
@@ -177,3 +178,55 @@ async def test_contact_create_handler(mock_api_key, alias_creds):
     assert body["full_name"] == "Ada Lovelace"
     assert body["emails"][0]["value"] == "ada@example.com"
     assert "c1" in out
+
+
+# ---------------------------------------------------------------------------
+# Tool/client parameter-drift fixes (params the client supported but the tool
+# schemas/handlers were not forwarding)
+# ---------------------------------------------------------------------------
+
+@respx.mock
+async def test_domain_create_forwards_new_params(mock_api_key):
+    """domain_create forwards retention_days/bounce_webhook/max_quota_per_alias/recipient verification."""
+    route = respx.post(f"{BASE}/v1/domains").mock(
+        return_value=httpx.Response(200, json={"name": "example.com"})
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await domains.HANDLERS["domain_create"](
+            client,
+            {
+                "domain": "example.com",
+                "retention_days": 7,
+                "bounce_webhook": "https://hook.example.com",
+                "max_quota_per_alias": "2 GB",
+                "has_recipient_verification": True,
+            },
+        )
+
+    body = parse_qs(route.calls.last.request.content.decode())
+    assert body["retention_days"] == ["7"]
+    assert body["bounce_webhook"] == ["https://hook.example.com"]
+    assert body["max_quota_per_alias"] == ["2 GB"]
+    assert body["has_recipient_verification"] == ["true"]
+
+
+@respx.mock
+async def test_alias_create_forwards_new_params(mock_api_key):
+    """alias_create forwards has_recipient_verification and max_quota."""
+    route = respx.post(f"{BASE}/v1/domains/example.com/aliases").mock(
+        return_value=httpx.Response(200, json={"name": "support"})
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await aliases.HANDLERS["alias_create"](
+            client,
+            {
+                "domain": "example.com",
+                "name": "support",
+                "has_recipient_verification": True,
+                "max_quota": "500 MB",
+            },
+        )
+
+    body = parse_qs(route.calls.last.request.content.decode())
+    assert body["has_recipient_verification"] == ["true"]
+    assert body["max_quota"] == ["500 MB"]
