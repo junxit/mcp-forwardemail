@@ -22,15 +22,13 @@ An MCP (Model Context Protocol) server that provides comprehensive access to the
 - **Python**: 3.10+
 - **uv**: 0.4+ (recommended)
 - **uvx**: Included with uv
-- **MCP SDK**: 1.x (`mcp>=1.28,<2`) — see the note below
+- **MCP SDK**: 2.x (`mcp>=2,<3`)
 - A ForwardEmail account with API access
 - API key from [ForwardEmail Security Settings](https://forwardemail.net/my-account/security)
 
-> **MCP SDK 2.x is not yet supported.** SDK 2.0 rebuilt the low-level `Server`,
-> replacing the `@server.list_tools()` / `@server.call_tool()` decorators this
-> server uses with constructor `on_*` parameters. The dependency is pinned to
-> `<2` so installs keep working; the upgrade path is written up in
-> [`docs/mcp-sdk-v2-migration.md`](docs/mcp-sdk-v2-migration.md).
+> **Running on MCP SDK 2.x.** The server was migrated in v0.4.0; see
+> [`docs/mcp-sdk-v2-migration.md`](docs/mcp-sdk-v2-migration.md) for what changed.
+> If you need SDK 1.x, pin `forwardemail-mcp==0.3.0`.
 
 ## Installation
 

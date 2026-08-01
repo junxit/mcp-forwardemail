@@ -21,11 +21,17 @@ import os
 import sys
 import logging
 import asyncio
-from typing import Any
+from typing import Optional
 
-from mcp.server import Server
+from mcp.server import Server, ServerRequestContext
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import (
+    CallToolRequestParams,
+    CallToolResult,
+    ListToolsResult,
+    PaginatedRequestParams,
+    TextContent,
+)
 
 from .client import ForwardEmailClient
 from .tools import (
@@ -111,6 +117,95 @@ TOOL_HANDLERS = {
 }
 
 
+def _error_result(text: str) -> CallToolResult:
+    """Build an error CallToolResult.
+
+    Args:
+        text: Human-readable error message to surface to the client.
+
+    Returns:
+        CallToolResult carrying the message and flagged with is_error.
+    """
+    return CallToolResult(
+        content=[TextContent(type="text", text=text)],
+        is_error=True,
+    )
+
+
+def create_server(client: ForwardEmailClient) -> Server:
+    """Build the MCP server bound to a ForwardEmail client.
+
+    Kept separate from run_server so the configured server can be driven
+    in-process by tests via the SDK's in-memory client transport.
+
+    Args:
+        client: ForwardEmail API client used to execute tool calls.
+
+    Returns:
+        Server with the tool-listing and tool-calling handlers wired up.
+    """
+
+    async def on_list_tools(
+        ctx: ServerRequestContext,
+        params: Optional[PaginatedRequestParams],
+    ) -> ListToolsResult:
+        """List all available tools.
+
+        Args:
+            ctx: Per-request server context supplied by the SDK.
+            params: Pagination parameters (unused; the full tool set is small
+                enough to return in one page).
+
+        Returns:
+            ListToolsResult wrapping every registered MCP tool.
+        """
+        return ListToolsResult(tools=ALL_TOOLS)
+
+    async def on_call_tool(
+        ctx: ServerRequestContext,
+        params: CallToolRequestParams,
+    ) -> CallToolResult:
+        """Handle tool calls.
+
+        The SDK does not convert handler exceptions into error results, so every
+        failure path must return a CallToolResult explicitly.
+
+        Args:
+            ctx: Per-request server context supplied by the SDK.
+            params: Tool invocation parameters carrying the name and arguments.
+
+        Returns:
+            CallToolResult with the tool output, or an error result flagged with
+            is_error if the tool is unknown or raised.
+        """
+        name = params.name
+        arguments = params.arguments or {}
+
+        handler = TOOL_HANDLERS.get(name)
+        if handler is None:
+            logger.error(f"Unknown tool: {name}")
+            return _error_result(f"Unknown tool: {name}")
+
+        try:
+            result = await handler(client, arguments)
+            return CallToolResult(content=[TextContent(type="text", text=str(result))])
+        except Exception as e:
+            logger.exception(f"Error executing tool {name}")
+            error_msg = str(e)
+            # Don't expose full error details that might leak credentials
+            if "401" in error_msg or "Unauthorized" in error_msg:
+                error_msg = "Authentication failed. Please check your FORWARDEMAIL_API_KEY."
+            return _error_result(f"Error: {error_msg}")
+
+    # Handlers are wired via constructor parameters; everything after `name`
+    # is keyword-only.
+    return Server(
+        "forwardemail-mcp",
+        on_list_tools=on_list_tools,
+        on_call_tool=on_call_tool,
+    )
+
+
 async def run_server() -> None:
     """Run the MCP server.
 
@@ -127,50 +222,8 @@ async def run_server() -> None:
         logger.error(str(e))
         sys.exit(1)
 
-    # Create the MCP server
-    server = Server("forwardemail-mcp")
-
-    # Create the API client
     client = ForwardEmailClient(api_key)
-
-    @server.list_tools()
-    async def list_tools() -> list[Tool]:
-        """List all available tools.
-
-        Returns:
-            List of Tool objects describing available MCP tools.
-        """
-        return ALL_TOOLS
-
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-        """Handle tool calls.
-
-        Args:
-            name: Name of the tool to execute.
-            arguments: Dict of arguments to pass to the tool.
-
-        Returns:
-            List containing a single TextContent with the tool result.
-
-        Raises:
-            ValueError: If tool name is not recognized.
-        """
-        if name not in TOOL_HANDLERS:
-            raise ValueError(f"Unknown tool: {name}")
-
-        handler = TOOL_HANDLERS[name]
-
-        try:
-            result = await handler(client, arguments)
-            return [TextContent(type="text", text=str(result))]
-        except Exception as e:
-            logger.exception(f"Error executing tool {name}")
-            error_msg = str(e)
-            # Don't expose full error details that might leak credentials
-            if "401" in error_msg or "Unauthorized" in error_msg:
-                error_msg = "Authentication failed. Please check your FORWARDEMAIL_API_KEY."
-            return [TextContent(type="text", text=f"Error: {error_msg}")]
+    server = create_server(client)
 
     # Run the server with stdio transport
     async with stdio_server() as (read_stream, write_stream):

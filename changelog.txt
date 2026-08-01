@@ -1,3 +1,25 @@
+[2026-08-01] - Version 0.4.0
+- Changed: Migrated to MCP Python SDK 2.x; dependency is now mcp>=2,<3
+  - server.py wires handlers via the Server(on_list_tools=, on_call_tool=)
+    constructor params instead of the removed @server.list_tools() and
+    @server.call_tool() decorators
+  - Handlers now take (ctx, params) and return ListToolsResult / CallToolResult
+    rather than bare lists; params.name and params.arguments replace the old
+    positional name/arguments arguments
+  - SDK v2 no longer converts handler exceptions into error results, so every
+    failure path returns a CallToolResult explicitly
+- Fixed: Tool failures are now correctly flagged with isError. Previously errors
+  were returned as ordinary text content, so clients could not distinguish a
+  failed call from a successful one. The 401 scrubbing that hides the API key is
+  preserved and now covered by a test
+- Added: create_server(client) factory so the configured server can be driven
+  in-process; run_server() is now a thin wrapper around it
+- Added: tests/test_protocol.py - protocol-level tests using the SDK's in-memory
+  client transport, covering tools/list, a successful tools/call, unknown-tool
+  handling, and 401 scrubbing. This layer was previously untested
+- Note: tool modules and the API client were unaffected; Tool and TextContent
+  have the same shape in v2. Tool count unchanged at 71
+
 [2026-08-01] - Version 0.3.0
 - Fixed: Pinned mcp to >=1.28,<2. The SDK 2.0.0 release (2026-07-28) removed the
   @server.list_tools()/@server.call_tool() decorators this server is built on, so
