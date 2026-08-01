@@ -22,8 +22,15 @@ An MCP (Model Context Protocol) server that provides comprehensive access to the
 - **Python**: 3.10+
 - **uv**: 0.4+ (recommended)
 - **uvx**: Included with uv
+- **MCP SDK**: 1.x (`mcp>=1.28,<2`) — see the note below
 - A ForwardEmail account with API access
 - API key from [ForwardEmail Security Settings](https://forwardemail.net/my-account/security)
+
+> **MCP SDK 2.x is not yet supported.** SDK 2.0 rebuilt the low-level `Server`,
+> replacing the `@server.list_tools()` / `@server.call_tool()` decorators this
+> server uses with constructor `on_*` parameters. The dependency is pinned to
+> `<2` so installs keep working; the upgrade path is written up in
+> [`docs/mcp-sdk-v2-migration.md`](docs/mcp-sdk-v2-migration.md).
 
 ## Installation
 
@@ -129,7 +136,7 @@ any alias across any domain in the same session. Generate a password first:
 |------|-------------|
 | `account_get` | Retrieve account information |
 | `account_create` | Create a new account |
-| `account_update` | Update account details |
+| `account_update` | Update account details (incl. `default_forwarding_address`) |
 
 ### Domains (13 tools)
 | Tool | Description |
@@ -157,6 +164,12 @@ any alias across any domain in the same session. Generate a password first:
 | `alias_update` | Update an alias |
 | `alias_delete` | Delete an alias |
 | `alias_generate_password` | Generate IMAP/SMTP password |
+
+`alias_create` and `alias_update` also accept **`has_wkd_disabled`** (disable WKD
+public key lookup) and **`smtp_limit`** (per-alias daily SMTP outbound limit; `0`
+uses the domain limit). `smtp_limit` requires **domain-admin** permission — the API
+rejects the request whenever that field is present for a non-admin member, so only
+pass it when you intend to set it.
 
 ### Outbound Emails (5 tools)
 | Tool | Description |
@@ -232,7 +245,7 @@ The tool groups below use **alias credentials** (`alias_username` + `alias_passw
 ### Messages — IMAP (5 tools)
 | Tool | Description |
 |------|-------------|
-| `messages_list` | List and search messages |
+| `messages_list` | List and search messages (pass `lightweight` for fast metadata-only results) |
 | `message_create` | Create/append a message |
 | `message_get` | Get a message |
 | `message_update` | Update flags/labels/folder |

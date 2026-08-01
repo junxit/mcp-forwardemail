@@ -67,6 +67,14 @@ TOOLS = [
                         "(e.g. is_junk, min_size, max_size, headers, message_id, 'reply-to')"
                     ),
                 },
+                "lightweight": {
+                    "type": "boolean",
+                    "description": (
+                        "Return metadata-only results. Much faster for list views, but "
+                        "the response omits 'nodemailer' and 'raw' and instead carries "
+                        "from/to/cc/bcc/reply_to parsed from the headers"
+                    ),
+                },
                 "page": {"type": "integer", "description": "Page number (1-indexed)"},
                 "limit": {
                     "type": "integer",
@@ -179,6 +187,7 @@ async def handle_messages_list(client: ForwardEmailClient, args: dict[str, Any])
         alias_password=args["alias_password"],
         page=args.get("page"),
         limit=args.get("limit"),
+        lightweight=args.get("lightweight"),
         filters=filters or None,
     )
     response = {"messages": result}

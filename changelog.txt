@@ -1,3 +1,23 @@
+[2026-08-01] - Version 0.3.0
+- Fixed: Pinned mcp to >=1.28,<2. The SDK 2.0.0 release (2026-07-28) removed the
+  @server.list_tools()/@server.call_tool() decorators this server is built on, so
+  the previous unbounded `mcp>=1.0.0` meant a fresh `uvx --from git+...` install
+  resolved 2.x and produced a broken server. Migration tracked in
+  docs/mcp-sdk-v2-migration.md
+- Added: alias_create/alias_update accept has_wkd_disabled (disable WKD public
+  key lookup) and smtp_limit (per-alias daily SMTP outbound limit; 0 uses the
+  domain limit). smtp_limit is only sent when explicitly provided, because
+  upstream requires domain-admin permission whenever the key is present
+- Added: messages_list accepts lightweight for metadata-only results - much
+  faster for list views; omits nodemailer/raw and returns parsed
+  from/to/cc/bcc/reply_to instead
+- Added: account_update accepts default_forwarding_address
+- Added: docs/mcp-sdk-v2-migration.md describing the SDK v2 upgrade path
+- Added: tests covering smtp_limit omission and zero-value handling, WKD, the
+  lightweight query param, and default_forwarding_address
+- Changed: Tool count unchanged at 71 - this upstream sync added no endpoints
+- Synced: forwardemail/forwardemail.net @ c26cf19fe5c60d0ad29110fa0d02a9dc2a73d9ce
+
 [2026-06-19] - Version 0.2.0
 - Fixed: invite_accept was broken by an upstream route change; it now requires a
   `token` argument and calls GET /v1/domains/{domain}/invites/{token}

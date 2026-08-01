@@ -17,7 +17,7 @@ import respx
 
 from forwardemail_mcp.client import ForwardEmailClient
 from forwardemail_mcp.server import ALL_TOOLS, TOOL_HANDLERS
-from forwardemail_mcp.tools import aliases, contacts, domains, folders
+from forwardemail_mcp.tools import account, aliases, contacts, domains, folders, messages
 
 BASE = "https://api.forwardemail.net"
 
@@ -230,3 +230,117 @@ async def test_alias_create_forwards_new_params(mock_api_key):
     body = parse_qs(route.calls.last.request.content.decode())
     assert body["has_recipient_verification"] == ["true"]
     assert body["max_quota"] == ["500 MB"]
+
+
+# ---------------------------------------------------------------------------
+# Upstream sync: alias smtp_limit / has_wkd_disabled, message lightweight,
+# account default_forwarding_address
+# ---------------------------------------------------------------------------
+
+@respx.mock
+async def test_alias_create_omits_smtp_limit_when_absent(mock_api_key):
+    """smtp_limit must not be sent unless explicitly set.
+
+    Upstream gates the field on domain-admin permission by mere presence, so
+    including the key at all breaks alias creation for non-admin members.
+    """
+    route = respx.post(f"{BASE}/v1/domains/example.com/aliases").mock(
+        return_value=httpx.Response(200, json={"name": "support"})
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await aliases.HANDLERS["alias_create"](
+            client, {"domain": "example.com", "name": "support"}
+        )
+
+    body = parse_qs(route.calls.last.request.content.decode())
+    assert "smtp_limit" not in body
+    assert "has_wkd_disabled" not in body
+
+
+@respx.mock
+async def test_alias_create_sends_zero_smtp_limit(mock_api_key):
+    """smtp_limit=0 is meaningful ('use the domain limit') and must survive."""
+    route = respx.post(f"{BASE}/v1/domains/example.com/aliases").mock(
+        return_value=httpx.Response(200, json={"name": "support"})
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await aliases.HANDLERS["alias_create"](
+            client, {"domain": "example.com", "name": "support", "smtp_limit": 0}
+        )
+
+    body = parse_qs(route.calls.last.request.content.decode())
+    assert body["smtp_limit"] == ["0"]
+
+
+@respx.mock
+async def test_alias_update_forwards_wkd_and_smtp_limit(mock_api_key):
+    """alias_update forwards both new alias fields."""
+    route = respx.put(f"{BASE}/v1/domains/example.com/aliases/abc123").mock(
+        return_value=httpx.Response(200, json={"name": "support"})
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await aliases.HANDLERS["alias_update"](
+            client,
+            {
+                "domain": "example.com",
+                "alias_id": "abc123",
+                "has_wkd_disabled": True,
+                "smtp_limit": 250,
+            },
+        )
+
+    body = parse_qs(route.calls.last.request.content.decode())
+    assert body["has_wkd_disabled"] == ["true"]
+    assert body["smtp_limit"] == ["250"]
+
+
+@respx.mock
+async def test_messages_list_lightweight_query_param(mock_api_key, alias_creds):
+    """lightweight is sent as the lowercase string the API's enum expects."""
+    route = respx.get(f"{BASE}/v1/messages").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await messages.HANDLERS["messages_list"](
+            client,
+            {
+                "alias_username": alias_creds[0],
+                "alias_password": alias_creds[1],
+                "lightweight": True,
+                "folder": "INBOX",
+            },
+        )
+
+    params = route.calls.last.request.url.params
+    assert params["lightweight"] == "true"
+    assert params["folder"] == "INBOX"
+
+
+@respx.mock
+async def test_messages_list_omits_lightweight_when_absent(mock_api_key, alias_creds):
+    """Default list behavior is unchanged when lightweight isn't requested."""
+    route = respx.get(f"{BASE}/v1/messages").mock(
+        return_value=httpx.Response(200, json=[])
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await messages.HANDLERS["messages_list"](
+            client,
+            {"alias_username": alias_creds[0], "alias_password": alias_creds[1]},
+        )
+
+    assert "lightweight" not in route.calls.last.request.url.params
+
+
+@respx.mock
+async def test_account_update_default_forwarding_address(mock_api_key):
+    """account_update forwards the new default_forwarding_address field."""
+    route = respx.put(f"{BASE}/v1/account").mock(
+        return_value=httpx.Response(200, json={"email": "me@example.com"})
+    )
+    async with ForwardEmailClient(mock_api_key) as client:
+        await account.HANDLERS["account_update"](
+            client, {"default_forwarding_address": "fwd@example.com"}
+        )
+
+    body = parse_qs(route.calls.last.request.content.decode())
+    assert body["default_forwarding_address"] == ["fwd@example.com"]

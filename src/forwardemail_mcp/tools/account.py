@@ -57,6 +57,13 @@ TOOLS = [
                     "type": "string",
                     "description": "URL to avatar image",
                 },
+                "default_forwarding_address": {
+                    "type": "string",
+                    "description": (
+                        "Default forwarding address for the account; "
+                        "pass an empty string to clear it"
+                    ),
+                },
             },
             "required": [],
         },
@@ -86,6 +93,7 @@ async def handle_account_update(client: ForwardEmailClient, args: dict[str, Any]
         given_name=args.get("given_name"),
         family_name=args.get("family_name"),
         avatar_url=args.get("avatar_url"),
+        default_forwarding_address=args.get("default_forwarding_address"),
     )
     return json.dumps(result, indent=2)
 

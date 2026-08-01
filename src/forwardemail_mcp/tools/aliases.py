@@ -91,6 +91,19 @@ TOOLS = [
                     "type": "string",
                     "description": "Maximum storage quota for this alias (e.g. '1 GB')",
                 },
+                "has_wkd_disabled": {
+                    "type": "boolean",
+                    "description": "Disable WKD (Web Key Directory) public key lookup for this alias",
+                },
+                "smtp_limit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": (
+                        "Per-alias daily SMTP outbound limit; 0 uses the domain limit. "
+                        "Requires domain-admin permission - omit unless explicitly setting it. "
+                        "Capped by the domain's effective limit"
+                    ),
+                },
             },
             "required": ["domain", "name"],
         },
@@ -168,6 +181,19 @@ TOOLS = [
                 "max_quota": {
                     "type": "string",
                     "description": "Maximum storage quota for this alias (e.g. '1 GB')",
+                },
+                "has_wkd_disabled": {
+                    "type": "boolean",
+                    "description": "Disable WKD (Web Key Directory) public key lookup for this alias",
+                },
+                "smtp_limit": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": (
+                        "Per-alias daily SMTP outbound limit; 0 uses the domain limit. "
+                        "Requires domain-admin permission - omit unless explicitly setting it. "
+                        "Does not reset the daily count or clear an existing suspension"
+                    ),
                 },
             },
             "required": ["domain", "alias_id"],
@@ -253,6 +279,8 @@ async def handle_alias_create(client: ForwardEmailClient, args: dict[str, Any]) 
         has_pgp=args.get("has_pgp"),
         public_key=args.get("public_key"),
         max_quota=args.get("max_quota"),
+        has_wkd_disabled=args.get("has_wkd_disabled"),
+        smtp_limit=args.get("smtp_limit"),
     )
     return json.dumps(result, indent=2)
 
@@ -281,6 +309,8 @@ async def handle_alias_update(client: ForwardEmailClient, args: dict[str, Any]) 
         has_pgp=args.get("has_pgp"),
         public_key=args.get("public_key"),
         max_quota=args.get("max_quota"),
+        has_wkd_disabled=args.get("has_wkd_disabled"),
+        smtp_limit=args.get("smtp_limit"),
     )
     return json.dumps(result, indent=2)
 

@@ -225,6 +225,7 @@ class ForwardEmailClient:
         given_name: Optional[str] = None,
         family_name: Optional[str] = None,
         avatar_url: Optional[str] = None,
+        default_forwarding_address: Optional[str] = None,
     ) -> dict:
         """Update account information.
 
@@ -233,6 +234,8 @@ class ForwardEmailClient:
             given_name: First name to set.
             family_name: Last name to set.
             avatar_url: URL to avatar image.
+            default_forwarding_address: Default forwarding address for the
+                account. Pass an empty string to clear it.
 
         Returns:
             Dict containing the updated account details.
@@ -245,6 +248,7 @@ class ForwardEmailClient:
             "given_name": given_name,
             "family_name": family_name,
             "avatar_url": avatar_url,
+            "default_forwarding_address": default_forwarding_address,
         }
         result, _ = await self._request("PUT", "/v1/account", data=data)
         return result
@@ -804,6 +808,8 @@ class ForwardEmailClient:
         has_pgp: Optional[bool] = None,
         public_key: Optional[str] = None,
         max_quota: Optional[str] = None,
+        has_wkd_disabled: Optional[bool] = None,
+        smtp_limit: Optional[int] = None,
     ) -> dict:
         """Create a new alias.
 
@@ -819,6 +825,11 @@ class ForwardEmailClient:
             has_pgp: Enable PGP encryption.
             public_key: PGP public key for encryption.
             max_quota: Maximum storage quota.
+            has_wkd_disabled: Disable WKD public key lookup for this alias.
+            smtp_limit: Per-alias daily SMTP outbound limit (0 uses the domain
+                limit). Requires domain-admin permission: the API rejects the
+                request if this key is present at all for a non-admin member, so
+                leave it as None unless the caller explicitly set it.
 
         Returns:
             Dict containing the created alias details.
@@ -841,6 +852,12 @@ class ForwardEmailClient:
             "has_pgp": str(has_pgp).lower() if has_pgp is not None else None,
             "public_key": public_key,
             "max_quota": max_quota,
+            "has_wkd_disabled": (
+                str(has_wkd_disabled).lower() if has_wkd_disabled is not None else None
+            ),
+            # `is not None` matters twice: 0 is a valid value ("use the domain
+            # limit"), and merely sending this key requires domain-admin rights.
+            "smtp_limit": str(smtp_limit) if smtp_limit is not None else None,
         }
         result, _ = await self._request(
             "POST", f"/v1/domains/{domain}/aliases", data=data
@@ -879,6 +896,8 @@ class ForwardEmailClient:
         has_pgp: Optional[bool] = None,
         public_key: Optional[str] = None,
         max_quota: Optional[str] = None,
+        has_wkd_disabled: Optional[bool] = None,
+        smtp_limit: Optional[int] = None,
     ) -> dict:
         """Update an alias.
 
@@ -895,6 +914,11 @@ class ForwardEmailClient:
             has_pgp: Enable PGP encryption.
             public_key: PGP public key.
             max_quota: Maximum storage quota.
+            has_wkd_disabled: Disable WKD public key lookup for this alias.
+            smtp_limit: Per-alias daily SMTP outbound limit (0 uses the domain
+                limit). Requires domain-admin permission: the API rejects the
+                request if this key is present at all for a non-admin member, so
+                leave it as None unless the caller explicitly set it.
 
         Returns:
             Dict containing the updated alias details.
@@ -917,6 +941,12 @@ class ForwardEmailClient:
             "has_pgp": str(has_pgp).lower() if has_pgp is not None else None,
             "public_key": public_key,
             "max_quota": max_quota,
+            "has_wkd_disabled": (
+                str(has_wkd_disabled).lower() if has_wkd_disabled is not None else None
+            ),
+            # `is not None` matters twice: 0 is a valid value ("use the domain
+            # limit"), and merely sending this key requires domain-admin rights.
+            "smtp_limit": str(smtp_limit) if smtp_limit is not None else None,
         }
         result, _ = await self._request(
             "PUT", f"/v1/domains/{domain}/aliases/{alias_id}", data=data
@@ -1738,6 +1768,7 @@ class ForwardEmailClient:
         alias_password: str,
         page: Optional[int] = None,
         limit: Optional[int] = None,
+        lightweight: Optional[bool] = None,
         filters: Optional[dict] = None,
     ) -> tuple[list[dict], Optional[PaginationInfo]]:
         """List/search messages for an alias (IMAP; alias-credential auth).
@@ -1747,6 +1778,9 @@ class ForwardEmailClient:
             alias_password: Alias password from generate_alias_password.
             page: Page number (1-indexed).
             limit: Results per page (default 25, max 100).
+            lightweight: Return metadata-only results. Much faster for list
+                views: the response omits "nodemailer" and "raw" and instead
+                carries from/to/cc/bcc/reply_to parsed from the headers.
             filters: Optional dict of additional query filters (e.g. folder,
                 is_unread, subject, from, to, search, since, before,
                 has_attachments, "reply-to", ...). Merged into query params.
@@ -1757,7 +1791,9 @@ class ForwardEmailClient:
         Raises:
             httpx.HTTPStatusError: If request fails.
         """
-        params = {"page": page, "limit": limit}
+        # httpx renders bools as lowercase true/false, matching the API's
+        # documented string enum for this parameter.
+        params = {"page": page, "limit": limit, "lightweight": lightweight}
         if filters:
             params.update(filters)
         return await self._request(
