@@ -1,3 +1,28 @@
+[2026-10-25] - Version 0.4.1
+- Security: upgraded every dependency carrying a published advisory, which
+  closed all 47 Dependabot alerts on this repository. The server holds a
+  ForwardEmail API key and talks to a remote API over TLS, so the transport and
+  token layers are the ones that matter here:
+  - PyJWT 2.10.1 -> 2.15.1 clears 16 alerts, several of them key-confusion
+    bypasses where a public key could be accepted as an HMAC secret
+  - certifi 2026.1.4 -> 2026.10.23 drops the emSign roots whose intermediate
+    CA keys were compromised, so a forged chain can no longer validate
+  - anyio 4.12.1 -> 4.15.1 fixes IDNA 2003 host encoding in TLSStream, which
+    allowed certificate spoofing for some host names
+  - cryptography 46.0.4 -> 50.0.2 (7 alerts, including a Bleichenbacher
+    oracle in PKCS#7 decryption and a vulnerable bundled OpenSSL)
+  - httpx2 and httpcore2 2.9.1 -> 2.16.0 (6 alerts, including secure
+    WebSocket traffic sent without TLS through SOCKS proxies)
+  - starlette 0.52.1 -> 1.10.0, python-multipart 0.0.22 -> 0.0.32,
+    mcp 2.0.0 -> 2.3.0, opentelemetry-api 1.44.0 -> 1.45.1,
+    Pygments 2.19.2 -> 2.21.0, pytest 9.0.2 -> 9.1.1
+- Changed: floors raised in pyproject.toml for the two direct dependencies
+  involved, mcp>=2.2 and pytest>=9.0.3, so a future resolution cannot drop
+  back to a vulnerable version. Everything else is transitive and is held by
+  uv.lock.
+- Verified: 25 tests pass on Python 3.10 and 3.12, the ends of the CI matrix.
+  The MCP SDK stayed within 2.x, so the handler wiring from 0.4.0 is unchanged.
+
 [2026-08-01] - Version 0.4.0
 - Changed: Migrated to MCP Python SDK 2.x; dependency is now mcp>=2,<3
   - server.py wires handlers via the Server(on_list_tools=, on_call_tool=)

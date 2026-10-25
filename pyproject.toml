@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forwardemail-mcp"
-version = "0.4.0"
+version = "0.4.1"
 description = "Unofficial MCP server for ForwardEmail API - manage domains, aliases, and emails"
 readme = "README.md"
 license = "MIT"
@@ -32,14 +32,14 @@ classifiers = [
 dependencies = [
     # SDK v2: the low-level Server wires handlers via constructor on_* params
     # and returns explicit Result types. Upper bound guards against a future 3.x.
-    "mcp>=2,<3",
+    "mcp>=2.2,<3",  # 2.2 floor: GHSA-84m7-p3x7-pcfv; upper bound guards a future 3.x
     "httpx>=0.27.0",
     "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
+    "pytest>=9.0.3",  # GHSA-6w46-j5rx-g56g tmpdir handling
     "pytest-asyncio>=0.23.0",
     "respx>=0.21.0",
 ]
